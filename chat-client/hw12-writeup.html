@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="writeup.css">
+  <title>Prism Chat Writeup</title>
+</head>
+<body>
+  <section class="issue1">
+    <span>
+        <h2>
+            Description of ultimate plan
+        </h2>
+    </span>
+    <span>
+        <p class="description">
+            I plan for my ultimate design to be a version of this chat app that contains the following features: 
+            a dynamic color management system that lets users choose to apply multiple different colors to different 
+            threads and manage them in a usable way (i.e. remove colors, change colors, filter for threads of certain colors), and a 
+            more functional automatic coloring of messages in threads (my current implementation does not functionally color
+            past messages or future messages in a given thread). 
+
+        </p>    
+
+        <p class="description">
+            It should ideally be capable of supporting the usage of the same color 
+            to track up to one thread at a time in different channels (so, two different channels can both have a red thread), applying color to messages 
+            by right clicking them and selecting on the message itself, and the usage of alternative color palettes, but these are lower priority 
+            features.
+        </p>
+            
+        <p class="description">
+            The color-based features described here are essentially the same as in my Figma mockup; the specific inclusion of color palettes is an 
+            expansion, in fact. I am cutting back expectations on the less color-related features such as notification bumping and more dynamic 
+            "community" management (which would be a good bit more complicated than channels)
+        </p>
+            
+    </span>
+  </section>
+  <hr>
+  <section class="issue1">
+    <span>
+        <h2>
+            How this is a halfway point
+        </h2>
+    </span>
+    <span>
+        <p class="description">
+            At this point, I've implemented the foundational feature of the app, i.e. the coloring of messages on click. This represents a rough 
+            halfway point because I implemented most of my feature on a scale of one (I used one color and allowed for selecting one message); 
+            the next stage involves expanding to allow for using <em>n</em> color to dynamically handle a larger number of messages per thread.
+
+            Additionally, the next stage should require expanding on just one more large component for Color Management, 
+            while this milestone involved the scaffolding of the rudimentary Color Management component and the fleshing out of 
+            both the app component and reply component.
+        </p>    
+    </span>
+  </section>
+</body>
+</html>

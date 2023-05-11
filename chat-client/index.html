@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="module" src="./chat.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <title>Prism</title>
+</head>
+<body>
+  <div id="app">
+    <h1>
+      <div class="titleWrapper">
+        My Cool Chat App
+      </div>
+    </h1>
+    <h2>
+      Welcome {{myUsername}}
+    </h2>
+    <div class="displayContainer">
+      <p>
+        <button @click="$gf.toggleLogIn">
+          <!-- If we have a user ID, we're logged in so show "Log Out" -->
+          <!-- Otherwise, show "Log In" -->
+          {{ $gf.me? 'Log Out' : 'Log In' }}
+        </button>
+      </p>
+    
+        <!-- If we're not logged in, hide everything except the login button -->
+        <template v-if="$gf.me">
+          <!-- User profile picture with option to edit -->
+
+          <!-- <div class="profilepicture">
+            <prof :actor="$gf.me" :editable="true">
+            </prof>
+          </div> -->
+          <div class="userManagementContainer">
+          <color-manager :color="'red'" :private-messaging="privateMessaging" :channel="channel" @colorbeginevent="startColoringMode">
+            <!-- <button type="button" style="background-color:red; color:white">
+              Color Thread
+            </button> -->
+            <!-- <button type="button" class="color-manager-button" :style="blueStyle">
+              Color Thread
+            </button> -->
+          </color-manager>
+          <!-- <p class="colorManagementContainer">
+            <button type="button" style="background-color:red; color:white" >
+              Color Thread
+            </button>
+          </p> -->
+          <p>
+            <!-- We display names in multiple places, so we made a -->
+            <!-- reusable <name></name> component. -->
+            <!-- See below for the template. -->
+            <form id="username-form" @submit.prevent="requestUsername()">
+              <input class="requestUsernameInput" type="text" v-model="requestedUsername" placeholder="Request username...">
+              <input type="submit" id="username-request-button" value="Request username"> 
+            </form>
+            <form id="username-undo-form" @submit.prevent="undoUsername()">
+              <input type="submit" id="username-undo-button" value="Restore previous username">
+            </form>
+            {{ this.usernameResult }}
+            <div id="usernameDisplay">
+              <p v-app>Your Username: {{ this.myUsername }}</p>
+            </div>
+          </p>
+          <p>
+            <!-- We display names in multiple places, so we made a -->
+            <!-- reusable <name></name> component. -->
+            <!-- See below for the template. -->
+            My Name Is: <name :actor="$gf.me" :editable="true"></name>  
+            My Profile Picture Is: <prof :actor="$gf.me" :editable="true"></prof>
+          </p>
+          <p>
+            Change chat format:
+            <input type="radio" id="channel" :value="false" v-model="privateMessaging" />
+            <label for="channel">Channel-based public chat</label>
+    
+            <input type="radio" id="pm" :value="true" v-model="privateMessaging" />
+            <label for="pm">Private Messaging</label>
+          </p>
+          <p v-if="!privateMessaging">
+            <label for="channel">
+              Change the channel you're chatting in:
+            </label>    
+            <input id="channel" v-model="channel"/>
+          </p>
+          
+          <div v-else>
+            <form @submit.prevent="chatWithUser">
+              <label for="recipient">
+                Type the username of who you'd like to chat with:
+              </label>
+              <input id="recipient" v-model="recipientUsernameSearch"/>
+              <input type="submit" id="username-search-button" value="Search"/>
+            </form>
+            <span v-if="recipient">
+              Chatting with {{ recipientUsername }}
+            </span>
+            <span v-else>
+              Username {{ recipientUsername }} does not exist!
+            </span>
+          </div>
+          <div class="sendMessageContainer">
+            <!-- A form for sending messages -->
+            <form @submit.prevent="sendMessage">
+              <input v-model="messageText" placeholder="Type a message..."/>
+              <input v-model="file" type="file" accept="image/*" @change="onImageAttachEvent"/>
+              <input type="submit" value="Send"/>
+            </form>
+          </div>
+          </div>
+      <ul>
+        <!-- List all the messages -->
+        <li v-for="(message, index) of messages" :key="message.id" ref="messagelist">
+          <!-- Display and edit form if we're editing a message -->
+          <form v-if="editID==message.id" @submit.prevent="saveEditMessage(message)">
+            <input v-model="editText">
+            <input type="submit" value="Save"/>
+          </form>
+          <div class="messageUlWrapper">
+            <ul v-else class="messageContainer">  
+            <li>
+              <reply :message="message" @replymessageupdate="updateReplyMessages"></reply>
+              <!-- <reply :message="message">
+              </reply> -->
+            </li>
+            <li class="messageNameAndUsername">
+              from:
+              <span class="messageName"><name :actor="message.actor"></name></span>
+              <span class="chatUsername" style="color:rgb(60, 60, 187)">(@{{actorsToUsernames[message.actor]}})</span>
+            </li>
+            <li>
+              Profile picture: <prof :actor="message.actor"></prof>
+            </li>
+            <template v-if="privateMessaging">
+              <li class="messageNameAndUsername">
+                to Name:<span class="message-name"><name :actor="message.bto[0]"></name></span>
+                <span class="chatUsername" style="color:rgb(60, 60, 187)">(@{{actorsToUsernames[message.bto[0]]}})</span>
+              </li>
+              <li class="messageActorId">
+                To Actor ID: {{ message.bto[0] }}
+              </li>
+              <li>
+                <read :messageid="message.id" :recipient="message.bto[0]">     
+                </read>
+              </li>
+            </template>	
+            <!-- msg TID: {{message.threadId}}
+            CTID: {{this.coloringThreadId}}
+            Equality: {{message.threadId == this.coloringThreadId}} -->
+            <div class="messageContent">
+              <!-- <li :class="message.threadId == this.coloringThreadId? thread-coloring : ''" @click="colorMessageThread(message, index)" ref="message">
+                <span class="messageHeader">Message:</span>
+                {{ message.content }} 
+              </li> -->
+              <!-- <li :class="this.threadColorComputing(message)" @click="colorMessageThread(message, index)">
+                <span class="messageHeader">Message:</span>
+                {{ message.content }}   
+              </li> -->
+              <!-- THREAD COLOR -->       
+              <!-- {{this.threadToColor[this.replyToThreadId[message.id]]}} -->
+              <li @click="colorMessageThread(message, index)">
+                <span class="messageHeader">Message:</span>
+                {{ message.content }}
+                <!-- <div v-if="message.threadId == this.messageThreadId" class="thread-coloring">
+                  {{ message.content }} 
+                </div>
+                <div v-else>
+                  {{ message.content }} 
+                </div> -->
+                <!-- <div :class="[message.threadId == this.messageThreadId? 'thread-coloring' : '']">
+                  {{ message.content }} 
+                </div> -->
+              </li>
+              <!-- <li style="background-color: {{this.threadToColor[this.replyToThreadId[message.id]]}}">
+                <span class="messageHeader">Message:</span>
+                {{ message.content }} 
+              </li> -->
+            </div>
+            <!-- <div :style="this.testConditionalClasses">
+              boilerplate2
+            </div> -->
+            
+            <!-- {{messageToIsReply}}
+            {{messageToIsReply[message.id]}} -->
+
+            <!-- <li v-if="messageToIsReply[message.id]" class="messageReplyContainer">
+              Replying to: 
+              <span style="color:rgb(8, 66, 43)"><name :actor="message.actor"></name>
+                @{{actorsToUsernames[message.actor]}}
+              </span> | 
+              <span style="color:rgb(81, 84, 84)">
+                {{message.respondeeContentPreview}}
+                {{ messagePreview(message) }}
+              </span>
+            </li> -->
+            <li class="messageTimestampPublish">
+              Published at: {{ message.published }}
+            </li>
+            <li class="messageTimestampEdit">
+              Last Edited at Time: {{ message.updated }}
+            </li>
+            <li class="messageAttachment" v-if="message.attachment && message.attachment.magnet">
+              <magnet-img :src="message.attachment.magnet"></magnet-img>
+            </li>
+            <!-- Only add these controls if the message is ours -->
+            <!-- You can't edit or delete other people's messages -->
+            <template v-if="message.actor==$gf.me">
+              <li>
+                <button @click="removeMessage(message)">
+                  Delete Message
+                </button>
+              </li>
+              <li>
+                <button @click="startEditMessage(message)">
+                  Edit Message
+                </button>
+              </li>
+            </template>
+            <li>
+              <like :messageid="message.id"></like>
+            </li>
+            </ul>
+          </div>
+        </li>
+      </li>
+        </template>
+    </div>
+  </div>
+
+  <template id="name">
+    <span v-if="!editing">
+
+      <!-- If we're not editing the name-->
+      <!-- Display the profile's name, if it exists -->
+      <!-- or anonymous if it doesn't -->
+      {{ profile? profile.name : 'Anonymous' }}
+
+      <!-- Also if the name is "editable" add an edit button -->
+      <button v-if="editable" @click="editName">
+        Edit Name
+      </button>
+    </span>
+
+    <!-- If we're in the editing state, create something to edit the name-->
+    <form v-else @submit.prevent="saveName">
+      <input v-model="editText"/>
+      <input type="submit" value="Save Name"/>
+    </form>
+  </template>
+
+  <template id="like">
+    <button @click="toggleLike">
+      {{ myLikes.length? 'Unlike' : 'Like' }}
+    </button>
+    "# of likes:  {{ numLikes }}"
+  </template>
+
+  <template id="read">
+    <button>
+      {{readActorsSet? 'Read' : 'Unread'}}
+    </button> 
+  </template>
+
+  <template id="reply">
+    <form v-if="replyID==message.id" @submit.prevent="sendReplyMessage">
+      <input v-model="replyText">
+      <input type="submit" value="Send Reply">
+    </form>
+    <button @click="startReplyMessage">
+      Reply to msg
+    </button>
+    <!-- <li v-if="messageToIsReply[message.id]" class="messageReplyContainer"> -->
+    <li v-if="message.inReplyTo" class="messageReplyContainer">
+      Replying to: 
+      <span style="color:rgb(8, 66, 43)"><name :actor="message.actor"></name>
+        <span class="messageName"><name :actor="message.actor"></name></span>
+        (@{{actorsToUsernames[message.actor]}})
+      </span> | 
+      <span style="color:rgb(81, 84, 84)">
+        {{message.respondeeContentPreview}}
+        <!-- {{ messagePreview(message) }} -->
+      </span>
+    </li>
+  </template>
+
+  <template id="prof">
+    <form v-if="editable" @submit.prevent="saveProfilePic">
+      <label for="userpfp" class="userpfpbutton">Upload Profile Pic</label>
+      <input id="userpfp" v-model="profilelink" style="visibility:hidden" type="file" accept="image/*" @change="onProfilePicAttachEvent"/>
+      <input type="submit" value="Submit Profile Pic"/>
+    </form>
+    <!-- <img :src="{{this.profilemagnet}}"> -->
+    <!-- <img :src="{{downloadProfilePics[this.uri]}}"> -->
+    <!-- <div v-if="downloadProfilePics">
+      <div v-if="this.uri">
+        <div v-if="this.uri in downloadProfilePics" class="userpfp-container">
+          Your Profile Picture: <img class="userpfp" :src="downloadProfilePics[this.uri]">
+        </div>
+      </div>
+    </div> -->
+    <div v-if="actorToProfilePics">
+      <div v-if="this.actor">
+        <!-- {{this.actor}} -->
+        <div v-if="this.actor in actorToProfilePics" class="userpfp-container">
+          Your Profile Picture: <img class="userpfp" :src="actorToProfilePics[this.actor]">
+        </div>
+      </div>
+    </div>
+    <!-- {{this.uri}} -->
+    <!-- <button @click="editProfilePic">
+      Edit Profile Pic
+    </button>
+    <button @click="saveProfilePic">
+      Save Profile Pic
+    </button> -->
+  </template>
+
+  <template id="magnet-img">
+    <img class="imgUploads" :src="fetchedSrc" />
+  </template>
+
+  <template id="color-manager">
+    <button type="button" class="color-manager-button" style="color:blue; background-color: lightskyblue;" @click="beginAssignColor">
+      Color Thread
+    </button>
+    
+    <!-- <p class="colorManagementContainer">
+      
+    </p> -->
+  </template>
+</body>
+</html>
